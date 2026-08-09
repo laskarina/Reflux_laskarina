@@ -1,0 +1,32 @@
+name: build-reflux
+
+on:
+  push:
+    branches: [ "change/2026080500" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish
+        run: >
+          dotnet publish Reflux/Reflux.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:TargetFramework=net8.0
+          -p:PublishSingleFile=true
+          -o publish
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reflux-utf16le
+          path: publish
+          retention-days: 30
