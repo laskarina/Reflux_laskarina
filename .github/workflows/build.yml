@@ -21,15 +21,23 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # Utils.CheckVersion splits the latest release tag on '.' and int.Parses
+      # the first three segments against the assembly version (x.y.z), so the
+      # tag must start with the csproj <Version>. Extra info goes after a 4th '.'.
       - name: Collect metadata
         id: meta
         run: |
-          $sha  = git rev-parse --short HEAD
-          $ver  = (Get-Content Reflux/offsets.txt -TotalCount 1).Trim()
-          $date = ($ver -split ':')[-1]
-          "sha=$sha"   >> $env:GITHUB_OUTPUT
-          "ver=$ver"   >> $env:GITHUB_OUTPUT
-          "date=$date" >> $env:GITHUB_OUTPUT
+          $version = (Select-String -Path Reflux/Reflux.csproj -Pattern '<Version>([^<]+)</Version>').Matches[0].Groups[1].Value.Trim()
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "csproj <Version> must be x.y.z for the update check, got '$version'"
+          }
+          $sha     = git rev-parse --short HEAD
+          $offsets = (Get-Content Reflux/offsets.txt -TotalCount 1).Trim()
+          $date    = ($offsets -split ':')[-1]
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "sha=$sha"         >> $env:GITHUB_OUTPUT
+          "offsets=$offsets" >> $env:GITHUB_OUTPUT
+          "tag=$version.$date-$sha" >> $env:GITHUB_OUTPUT
 
       - name: Publish
         run: >
@@ -41,23 +49,24 @@ jobs:
         run: |
           Copy-Item LICENSE publish/
           Compress-Archive -Path publish/* `
-            -DestinationPath "Reflux-${{ steps.meta.outputs.date }}-${{ steps.meta.outputs.sha }}.zip"
+            -DestinationPath "Reflux-${{ steps.meta.outputs.tag }}.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: reflux-${{ steps.meta.outputs.date }}-${{ steps.meta.outputs.sha }}
+          name: reflux-${{ steps.meta.outputs.tag }}
           path: publish
           retention-days: 30
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: build-${{ steps.meta.outputs.date }}-${{ steps.meta.outputs.sha }}
+          tag_name: ${{ steps.meta.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Reflux (${{ steps.meta.outputs.ver }})
+          name: Reflux ${{ steps.meta.outputs.version }} (${{ steps.meta.outputs.offsets }})
           body: |
             source: `${{ github.repository }}` @ `${{ github.ref_name }}` (`${{ steps.meta.outputs.sha }}`)
-            offsets: `${{ steps.meta.outputs.ver }}`
+            version: `${{ steps.meta.outputs.version }}`
+            offsets: `${{ steps.meta.outputs.offsets }}`
 
             Built from https://github.com/olji/Reflux (MIT)
           files: '*.zip'

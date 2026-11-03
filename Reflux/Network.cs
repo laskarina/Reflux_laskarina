@@ -17,7 +17,7 @@ namespace Reflux
         readonly static HttpClient client = new HttpClient();
         public static string GetLatestVersion()
         {
-            var req = WebRequest.Create("https://github.com/olji/Reflux/releases/latest");
+            var req = WebRequest.Create("https://github.com/laskarina/Reflux_laskarina/releases/latest");
             req.Method = "HEAD";
             var response = req.GetResponse() as HttpWebResponse;
             return response.ResponseUri.Segments.Last();
