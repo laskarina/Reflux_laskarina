@@ -15,7 +15,7 @@ namespace Reflux
             Console.WriteLine("Starting offset search mode, press ENTER to continue");
             Console.ReadLine();
             OffsetsCollection newOffsets = new OffsetsCollection();
-            newOffsets.SongList = FetchAndSearch(Offsets.SongList, "SongList", MergeByteRepresentations("5.1.1.".ToBytes()));
+            newOffsets.SongList = FetchAndSearch(Offsets.SongList, "SongList", MergeByteRepresentations("5.1.1.".ToBytesUnicode()));
             newOffsets.UnlockData = FetchAndSearch(Offsets.UnlockData, "UnlockData", MergeByteRepresentations(1000.ToBytes(), 1.ToBytes(), 462.ToBytes()));
             newOffsets.DataMap = FetchAndSearch(Offsets.DataMap, "DataMap", MergeByteRepresentations(0x7FFF.ToBytes(), 0.ToBytes()), -3 * 8); // Back 3 steps in 8-byte address space
 

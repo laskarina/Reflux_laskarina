@@ -27,5 +27,9 @@ namespace Reflux
         {
             return longs.SelectMany(i => BitConverter.GetBytes(i)).ToArray();
         }
+        public static byte[] ToBytesUnicode(this string str)
+        {
+            return Encoding.Unicode.GetBytes(str); // UTF-16LE
+        }
     }
 }
