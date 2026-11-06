@@ -1,8 +1,10 @@
 name: build-reflux
 
+# Every push to master or develop builds, tests and uploads the zip as an Actions artifact.
+# Only master additionally publishes a GitHub Release (see the Release step).
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "develop" ]
     paths-ignore:
       - '**.md'
       - 'LICENSE'
@@ -69,6 +71,7 @@ jobs:
           retention-days: 30
 
       - name: Release
+        if: github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
