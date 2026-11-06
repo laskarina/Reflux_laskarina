@@ -68,7 +68,7 @@ savehistory = true      ; history/playlog.jsonl へ追記する（スコアビ�
 **使い方**
 
 - `savehistory = true`（初期設定）で Reflux を使っていれば、プレーするたびに `history/playlog.jsonl` に 1 行追記されます。ビューアが読むのはこのファイルだけです。
-- 起動すると、自分のフォルダ、次に 1 つ上のフォルダの順に `history/playlog.jsonl` を探します。見つからなければフォルダ選択ダイアログが開きます。`ファイル > フォルダを開く` でいつでも変更できます。選んだフォルダやウィンドウ位置は `%APPDATA%\Reflux.HistoryViewer\settings.json` に保存されます。
+- 起動すると、自分のフォルダ、次に 1 つ上のフォルダの順に `history/playlog.jsonl` を探します。見つからなければフォルダ選択ダイアログが開きます。`ファイル > フォルダを開く` でいつでも変更できます。選んだフォルダ、ウィンドウの位置と大きさ、絞り込み条件、並び順、表示中のタブは `%APPDATA%\Reflux.HistoryViewer\settings.json` に保存され、次回起動時に復元されます。
 - Reflux と同時に起動しておくと、新しいプレーは数秒以内に一覧へ反映されます。
 - 読み込んだデータは `history/viewer.db`（SQLite）にキャッシュされます。正となるのは `playlog.jsonl` のほうなので、`viewer.db` はいつ削除しても構いません。次回起動時、または `ファイル > 全件取り込み直し` で作り直されます。
 - ビューアが `playlog.jsonl` や Reflux の他の出力ファイルに書き込むことはありません。ネットワークも使いません。
@@ -156,7 +156,7 @@ savehistory = true      ; append to history/playlog.jsonl (for the score viewer)
 **How to use it**
 
 - With `savehistory = true` (the default) Reflux appends one line to `history/playlog.jsonl` per play. That file is the only thing the viewer reads.
-- On start the viewer looks for `history/playlog.jsonl` in its own folder and then in the parent folder. If neither has one, a folder dialog opens. You can change the folder at any time with `ファイル > フォルダを開く` (File > Open folder). The chosen folder and the window position are saved in `%APPDATA%\Reflux.HistoryViewer\settings.json`.
+- On start the viewer looks for `history/playlog.jsonl` in its own folder and then in the parent folder. If neither has one, a folder dialog opens. You can change the folder at any time with `ファイル > フォルダを開く` (File > Open folder). The chosen folder, the window position and size, the filters, the sort order and the current tab are saved in `%APPDATA%\Reflux.HistoryViewer\settings.json` and restored on the next start.
 - Keep it open while Reflux is running and new plays show up within a few seconds.
 - The imported data is cached in `history/viewer.db` (SQLite). `playlog.jsonl` stays the source of truth, so `viewer.db` can be deleted at any time; it is rebuilt on the next start or with `ファイル > 全件取り込み直し` (File > Rebuild all).
 - The viewer never writes to `playlog.jsonl` or to any other Reflux file, and it does not use the network.
