@@ -42,3 +42,4 @@ A Windows desktop app (WPF, .NET 8) that shows the play history per chart: every
 - While Reflux is running the viewer watches `playlog.jsonl` and picks up new plays within a few seconds. `F5` re-imports, `Ctrl+F` jumps to the search box, `Esc` clears the filters.
 - The data is cached in `history/viewer.db` (SQLite). `playlog.jsonl` stays the source of truth: `viewer.db` can be deleted at any time and is rebuilt on the next start (or use File > Rebuild).
 - The viewer works offline and never writes to `playlog.jsonl` or to any other Reflux file.
+- File > 過去データを取り込む imports the `sessions/Session_*.json` files that Reflux wrote while `savejson = true`, so plays from before `savehistory` existed show up too. Those rows have no song id (they are matched to playlog rows by title and difficulty), no options / level / note count, and are marked 旧JSON in the play list. Each file is imported once; the data goes into `viewer.db` only.

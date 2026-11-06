@@ -202,6 +202,49 @@ public sealed class HistoryStore : IDisposable
         }
     }
 
+    /// <summary>
+    /// Import one sessions/Session_*.json file written by Reflux (savejson = true). The whole file is read at once and
+    /// inserted in one transaction; a file that was imported before is skipped (<see cref="ImportResult.AlreadyImported"/>).
+    /// The rows get source = session_json and carry no song_id, so they join the playlog rows by (title, difficulty).
+    /// Only viewer.db is written, never playlog.jsonl. Throws for a file that is not a Reflux session file.
+    /// </summary>
+    public ImportResult ImportSessionJson(string path)
+    {
+        var fullPath = Path.GetFullPath(path);
+        var file = new FileInfo(fullPath);
+        if (!file.Exists)
+        {
+            return ImportResult.NotFound(fullPath);
+        }
+        var parsed = SessionJsonImporter.ParseFile(fullPath);
+        lock (_sync)
+        {
+            if (ReadStates("WHERE path = @path", ("@path", fullPath)).Count > 0)
+            {
+                return new ImportResult(fullPath, true, 0, 0, false, file.Length, null, null, new HashSet<long>()) { AlreadyImported = true };
+            }
+            using var tx = _conn.BeginTransaction();
+            var state = GetOrCreateState(fullPath, SessionJsonKind, tx);
+            var index = new ChartIndex(_conn, tx);
+            using var insert = CreatePlayInsert(tx);
+            int inserted = 0;
+            long? firstId = null, lastId = null;
+            var chartIds = new HashSet<long>();
+            foreach (var record in parsed.Records)
+            {
+                long chartId = index.Resolve(record);
+                long playId = InsertPlay(insert, record, chartId, state.Id);
+                inserted++;
+                firstId ??= playId;
+                lastId = playId;
+                chartIds.Add(chartId);
+            }
+            SaveState(state.Id, file.Length, file.Length, parsed.Skipped, tx);
+            tx.Commit();
+            return new ImportResult(fullPath, true, inserted, parsed.Skipped, false, file.Length, firstId, lastId, chartIds);
+        }
+    }
+
     /// <summary>Forget everything imported from a file so that the next import reads it from the beginning.</summary>
     public void ResetImport(string path)
     {

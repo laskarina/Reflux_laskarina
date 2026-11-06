@@ -228,11 +228,11 @@ public partial class MainWindow : Window
 
     #region Dialogs and menu handlers
 
-    string? PickFolder()
+    string? PickFolder(string title)
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            Title = "Reflux のフォルダ（history を含む）、または history フォルダを選択してください",
+            Title = title,
             Multiselect = false,
         };
         if (_settings.HistoryDir is { } dir && Directory.Exists(dir))

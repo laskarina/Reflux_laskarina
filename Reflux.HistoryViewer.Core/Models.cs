@@ -100,6 +100,8 @@ public sealed record ImportResult(
 {
     public static ImportResult NotFound(string path) => new(path, false, 0, 0, false, 0, null, null, new HashSet<long>());
     public bool Changed => Inserted > 0 || Rebuilt;
+    /// <summary>Set when a sessions/*.json file was skipped because it had been imported before.</summary>
+    public bool AlreadyImported { get; init; }
 }
 
 public readonly record struct ImportProgress(int Lines, long BytesDone, long BytesTotal);

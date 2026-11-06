@@ -122,7 +122,7 @@ public static class PlaylogParser
             : null;
     }
 
-    static string? Str(JToken? token)
+    internal static string? Str(JToken? token)
     {
         if (token is null || token.Type == JTokenType.Null || token.Type == JTokenType.Undefined)
         {
@@ -131,7 +131,7 @@ public static class PlaylogParser
         return token.Type == JTokenType.String ? (string?)token : token.ToString(Formatting.None);
     }
 
-    static int? Int(JToken? token)
+    internal static int? Int(JToken? token)
     {
         if (token is null)
         {
@@ -151,7 +151,7 @@ public static class PlaylogParser
         }
     }
 
-    static bool? Bool(JToken? token)
+    internal static bool? Bool(JToken? token)
     {
         if (token is null)
         {

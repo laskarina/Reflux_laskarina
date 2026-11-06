@@ -36,6 +36,7 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="ファイル(_F)">
                 <MenuItem Header="フォルダを開く(_O)..." Command="{Binding OpenFolderCommand}" />
+                <MenuItem Header="過去データを取り込む(_I)..." Command="{Binding ImportSessionsCommand}" ToolTip="sessions/*.json（savejson の出力）を viewer.db に取り込みます" />
                 <MenuItem Header="再取り込み(_R)" InputGestureText="F5" Command="{Binding ReimportCommand}" />
                 <MenuItem Header="全件取り込み直し(_A)" Command="{Binding RebuildCommand}" />
                 <Separator />

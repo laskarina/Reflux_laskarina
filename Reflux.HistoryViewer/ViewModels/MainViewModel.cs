@@ -30,7 +30,7 @@ public sealed class GraphData
 public sealed class MainViewModel : ObservableObject, IDisposable
 {
     readonly ViewerSettings _settings;
-    readonly Func<string?> _pickFolder;
+    readonly Func<string, string?> _pickFolder;
     readonly Func<string, string, bool> _confirm;
     readonly SynchronizationContext _ui;
     readonly SemaphoreSlim _importGate = new(1, 1);
@@ -70,7 +70,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     string _statusMessage = "";
     string? _dbPath;
 
-    public MainViewModel(ViewerSettings settings, Func<string?> pickFolder, Func<string, string, bool> confirm)
+    public MainViewModel(ViewerSettings settings, Func<string, string?> pickFolder, Func<string, string, bool> confirm)
     {
         _settings = settings;
         _pickFolder = pickFolder;
@@ -96,6 +96,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         OpenFolderCommand = new RelayCommand(_ => _ = ChooseFolderAsync());
         ReimportCommand = StoreCommand(_ => _ = ImportAsync());
+        ImportSessionsCommand = StoreCommand(_ => _ = ImportSessionsAsync());
         RebuildCommand = StoreCommand(_ => _ = RebuildAsync());
         ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
         ShowSongsCommand = new RelayCommand(_ => SelectedTab = 0);
@@ -551,6 +552,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public ICommand OpenFolderCommand { get; }
     public ICommand ReimportCommand { get; }
+    public ICommand ImportSessionsCommand { get; }
     public ICommand RebuildCommand { get; }
     public ICommand ClearFiltersCommand { get; }
     public ICommand ShowSongsCommand { get; }
@@ -573,7 +575,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var dir = _settings.HistoryDir is { } saved && Directory.Exists(saved) ? saved : HistoryLocator.FindDefault();
         if (dir is null)
         {
-            var chosen = _pickFolder();
+            var chosen = _pickFolder(FolderPrompt);
             dir = chosen is null ? null : HistoryLocator.ResolveChosenFolder(chosen);
         }
         if (dir is null)
@@ -621,9 +623,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     void OnPlaylogChanged() => _ui.Post(_ => _ = ImportAsync(), null);
 
+    const string FolderPrompt = "Reflux のフォルダ（history を含む）、または history フォルダを選択してください";
+
     async Task ChooseFolderAsync()
     {
-        var chosen = _pickFolder();
+        var chosen = _pickFolder(FolderPrompt);
         if (chosen is null)
         {
             return;
@@ -708,6 +712,89 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 {
                     await LoadDailyAsync();
                 }
+            }
+        }
+        finally
+        {
+            IsImporting = false;
+            ProgressText = "";
+            _importGate.Release();
+            if (_importQueued)
+            {
+                _importQueued = false;
+                _ = ImportAsync();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Import every *.json file of a sessions/ folder (Reflux's savejson output) into viewer.db. Files that were
+    /// imported before are skipped, so the command can be repeated after new sessions were recorded.
+    /// </summary>
+    async Task ImportSessionsAsync()
+    {
+        var store = _store;
+        if (store is null)
+        {
+            return;
+        }
+        var folder = _pickFolder("過去データ（sessions フォルダ、または Session_*.json のあるフォルダ）を選択してください");
+        if (folder is null)
+        {
+            return;
+        }
+        var files = Directory.GetFiles(folder, "*.json");
+        if (files.Length == 0 && Directory.Exists(Path.Combine(folder, "sessions")))
+        {
+            folder = Path.Combine(folder, "sessions");
+            files = Directory.GetFiles(folder, "*.json");
+        }
+        Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+        if (files.Length == 0)
+        {
+            StatusMessage = "選択したフォルダに .json ファイルがありません";
+            return;
+        }
+        if (!await _importGate.WaitAsync(0))
+        {
+            StatusMessage = "取り込み中です。終わってからもう一度実行してください";
+            return;
+        }
+        try
+        {
+            IsImporting = true;
+            int imported = 0, already = 0, failed = 0, rows = 0, skippedRows = 0;
+            var chartIds = new HashSet<long>();
+            for (int i = 0; i < files.Length; i++)
+            {
+                var file = files[i];
+                ProgressText = $"過去データを取り込み中... {i + 1}/{files.Length} {Path.GetFileName(file)}";
+                try
+                {
+                    var result = await Task.Run(() => store.ImportSessionJson(file));
+                    if (result.AlreadyImported)
+                    {
+                        already++;
+                    }
+                    else
+                    {
+                        imported++;
+                        rows += result.Inserted;
+                        skippedRows += result.Skipped;
+                        chartIds.UnionWith(result.ChartIds);
+                    }
+                }
+                catch (Exception)
+                {
+                    failed++; /* not a Reflux session file, unreadable, ... */
+                }
+            }
+            StatusMessage = $"過去データ: {imported} ファイルから {rows:N0} 件を取り込みました（取り込み済み {already} ファイル、読み飛ばし {skippedRows} 件、失敗 {failed} ファイル）";
+            bool affectsSelection = SelectedChart is { } selected && chartIds.Contains(selected.Id);
+            await RefreshChartsAsync(reloadDetail: affectsSelection);
+            if (SelectedTab == 1)
+            {
+                await LoadDailyAsync();
             }
         }
         finally
