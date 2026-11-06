@@ -215,6 +215,63 @@ namespace Reflux
             return json;
         }
         /// <summary>
+        /// Generate and return a history entry (one line of history/playlog.jsonl, schema_version 1)
+        /// </summary>
+        /// <returns></returns>
+        public JObject GetHistoryEntry()
+        {
+            JObject json = new JObject
+            {
+                ["schema_version"] = 1,
+                ["recorded_at"] = timestamp.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
+                ["game_version"] = Offsets.Version,
+                ["reflux_version"] = typeof(Program).Assembly.GetName().Version?.ToString(3),
+                ["song_id"] = chart.songid,
+                ["title"] = chart.title,
+                ["title_english"] = chart.title_english,
+                ["artist"] = chart.artist,
+                ["genre"] = chart.genre,
+                ["bpm"] = chart.bpm,
+                ["difficulty"] = chart.difficulty.ToString(),
+                ["level"] = chart.level,
+                ["total_notes"] = chart.totalNotes,
+                ["play_side"] = judges.playtype.ToString(),
+                ["data_available"] = DataAvailable,
+                ["ex_score"] = exscore,
+                ["grade"] = grade.ToString(),
+                /* Lamp and gauge percent come from the play data block, which isn't available for H-RAN, BATTLE or assist plays */
+                ["lamp"] = DataAvailable ? new JValue(clearLamp.ToString()) : JValue.CreateNull(),
+                ["lamp_text"] = DataAvailable ? new JValue(ExpandLamp(clearLamp)) : JValue.CreateNull(),
+                ["miss_count"] = MissCountValid ? (int?)MissCount : null,
+                ["gauge_type"] = settings.gauge,
+                ["gauge_percent"] = DataAvailable ? (int?)gauge : null,
+            };
+            json["judge"] = new JObject
+            {
+                ["pgreat"] = judges.pgreat,
+                ["great"] = judges.great,
+                ["good"] = judges.good,
+                ["bad"] = judges.bad,
+                ["poor"] = judges.poor,
+                ["combo_break"] = judges.combobreak,
+                ["fast"] = judges.fast,
+                ["slow"] = judges.slow
+            };
+            json["options"] = new JObject
+            {
+                ["style"] = settings.style,
+                /* style2 is the 2P side style and only meaningful for DP */
+                ["style2"] = judges.playtype == PlayType.DP && !string.IsNullOrEmpty(settings.style2) ? new JValue(settings.style2) : JValue.CreateNull(),
+                ["assist"] = settings.assist,
+                ["range"] = settings.range,
+                ["flip"] = settings.flip,
+                ["battle"] = settings.battle,
+                ["hran"] = settings.Hran
+            };
+            json["premature_end"] = judges.prematureEnd;
+            return json;
+        }
+        /// <summary>
         /// Generate and return an entry to save to the session tsv
         /// </summary>
         /// <returns></returns>
