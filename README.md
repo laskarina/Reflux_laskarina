@@ -33,3 +33,12 @@ savehistory = true
 - Each line holds the song id, title, artist, genre, BPM, difficulty, level, note count, play side (P1/P2/DP), EX score, grade, lamp, BP, gauge type and end-of-play gauge percent, all judge counts, FAST/SLOW, the options used (style, style2 for DP, assist, range, flip, battle, H-RAN) and the INFINITAS build / Reflux version that wrote it. `schema_version` is `1`.
 - The file is append-only and is never rewritten. Delete it to start over.
 - The existing outputs (`tracker.tsv`, `sessions/`, `latest.*`, the livestream text files) are not affected, and when the key is missing from `config.ini` nothing changes.
+
+## History viewer (`Reflux.HistoryViewer.exe`)
+
+A Windows desktop app (WPF, .NET 8) that shows the play history per chart: every play of a song/difficulty in time order with EX score, grade, lamp, BP, gauge, options, judge counts, FAST/SLOW and premature-end marks, plus EX score / BP graphs and a filterable song list (play count, best EX, best lamp, min BP, last played).
+
+- Put `Reflux.HistoryViewer.exe` in the Reflux folder (next to `Reflux.exe`) or in `history/` itself. On startup it looks for `history/playlog.jsonl` in its own folder and then in the parent folder; if neither has one it asks for the folder. The choice is remembered in `%APPDATA%\Reflux.HistoryViewer\settings.json`.
+- While Reflux is running the viewer watches `playlog.jsonl` and picks up new plays within a few seconds. `F5` re-imports, `Ctrl+F` jumps to the search box, `Esc` clears the filters.
+- The data is cached in `history/viewer.db` (SQLite). `playlog.jsonl` stays the source of truth: `viewer.db` can be deleted at any time and is rebuilt on the next start (or use File > Rebuild).
+- The viewer works offline and never writes to `playlog.jsonl` or to any other Reflux file.

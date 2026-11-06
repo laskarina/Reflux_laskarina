@@ -45,9 +45,20 @@ jobs:
           -c Release -r win-x64 --self-contained true
           -p:PublishSingleFile=true -o publish
 
+      - name: Test history viewer
+        run: dotnet test Reflux.HistoryViewer.Tests/Reflux.HistoryViewer.Tests.csproj -c Release
+
+      # Reflux.HistoryViewer.exe ships in the same zip as Reflux.exe so that it finds history/ next to it.
+      - name: Publish history viewer
+        run: >
+          dotnet publish Reflux.HistoryViewer/Reflux.HistoryViewer.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish-viewer
+
       - name: Bundle
         run: |
           Copy-Item LICENSE publish/
+          Copy-Item publish-viewer/Reflux.HistoryViewer.exe publish/
           Compress-Archive -Path publish/* `
             -DestinationPath "Reflux-${{ steps.meta.outputs.tag }}.zip"
 
