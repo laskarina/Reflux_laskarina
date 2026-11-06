@@ -17,6 +17,7 @@ namespace Reflux
         public static bool Save_json { get; private set; }
         public static bool Save_latestJson { get; private set; }
         public static bool Save_latestTxt { get; private set; }
+        public static bool Save_history { get; private set; }
         public static bool Stream_Playstate { get; private set; }
         public static bool Stream_Marquee { get; private set; }
         public static bool Stream_FullSongInfo { get; private set; }
@@ -46,6 +47,7 @@ namespace Reflux
             Save_json = ReadConfigBoolean("record:savejson");
             Save_latestJson = ReadConfigBoolean("record:savelatestjson");
             Save_latestTxt = ReadConfigBoolean("record:savelatesttxt");
+            Save_history = ReadConfigBoolean("record:savehistory");
 
             header.songInfo = ReadConfigBoolean("localrecord:songinfo");
             header.chartDetails = ReadConfigBoolean("localrecord:chartdetails");

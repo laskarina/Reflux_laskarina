@@ -342,6 +342,19 @@ namespace Reflux
                                     continue;
                                 }
 
+                                /* Play history is appended for every play, including ones where DataAvailable is false */
+                                if (Config.Save_history)
+                                {
+                                    try
+                                    {
+                                        History.Append(latestData);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Utils.Except(e, "History");
+                                    }
+                                }
+
                                 if (latestData.DataAvailable)
                                 {
                                     if (Config.Save_remote)
