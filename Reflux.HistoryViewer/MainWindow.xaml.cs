@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _settings = settings;
+        _chartSort = RestoreChartSort();
         _vm = new MainViewModel(settings, PickFolder, Confirm);
         DataContext = _vm;
         _vm.PropertyChanged += OnViewModelPropertyChanged;
@@ -36,7 +37,10 @@ public partial class MainWindow : Window
     {
         ApplySplitRatio(_settings.SplitterRatio);
         DrawPlots();
-        LastPlayedColumn.SortDirection = ListSortDirection.Descending; /* the list arrives sorted this way from SQL */
+        if (_chartSort is null)
+        {
+            LastPlayedColumn.SortDirection = ListSortDirection.Descending; /* the list arrives sorted this way from SQL */
+        }
         await _vm.InitializeAsync();
     }
 
@@ -44,6 +48,8 @@ public partial class MainWindow : Window
     {
         SaveWindowBounds();
         _settings.SplitterRatio = CurrentSplitRatio();
+        _settings.ChartSortPath = _chartSort?.Path;
+        _settings.ChartSortDescending = _chartSort?.Direction == ListSortDirection.Descending;
         _vm.SaveState();
         _settings.Save();
         _vm.Dispose();
@@ -95,6 +101,16 @@ public partial class MainWindow : Window
         /* Let the DataGrid sort as usual, but remember the choice so it survives the next list refresh. */
         var direction = e.Column.SortDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
         _chartSort = (e.Column.SortMemberPath, direction);
+    }
+
+    /// <summary>Sort saved by the previous run, if it still names one of the song list columns.</summary>
+    (string Path, ListSortDirection Direction)? RestoreChartSort()
+    {
+        if (_settings.ChartSortPath is not { Length: > 0 } path || ChartsGrid.Columns.All(c => c.SortMemberPath != path))
+        {
+            return null;
+        }
+        return (path, _settings.ChartSortDescending ? ListSortDirection.Descending : ListSortDirection.Ascending);
     }
 
     void ReapplyChartSort()

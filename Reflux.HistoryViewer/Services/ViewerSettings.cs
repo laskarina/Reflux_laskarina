@@ -19,6 +19,18 @@ public sealed class ViewerSettings
     public double SplitterRatio { get; set; } = 0.42;
     public string? LastChartKey { get; set; }
     public bool NewestFirst { get; set; } = true;
+    /// <summary>Song list filters as last used. null means "すべて" (the search text: empty).</summary>
+    public string? SearchText { get; set; }
+    public int? FilterLevel { get; set; }
+    public string? FilterSide { get; set; }
+    public string? FilterDifficulty { get; set; }
+    public int? FilterLamp { get; set; }
+    public int? FilterPeriodDays { get; set; }
+    /// <summary>0 = 曲一覧, 1 = 日別サマリ.</summary>
+    public int SelectedTab { get; set; }
+    /// <summary>SortMemberPath of the song list column that was sorted last; null for the default order (最終プレー, newest first).</summary>
+    public string? ChartSortPath { get; set; }
+    public bool ChartSortDescending { get; set; }
 
     public static string FilePath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Reflux.HistoryViewer", "settings.json");
 

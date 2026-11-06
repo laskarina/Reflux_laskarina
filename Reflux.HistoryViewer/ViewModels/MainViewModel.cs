@@ -88,11 +88,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         lamps.AddRange(LampInfo.Codes.Skip(1).Select(c => new FilterOption<int?>($"{c} ({LampInfo.Text(c)})", LampInfo.Rank(c))));
         Lamps = lamps;
         Periods = new FilterOption<int?>[] { new("すべて", null), new("今日", 1), new("7日間", 7), new("30日間", 30), new("90日間", 90), new("1年", 365) };
-        _selectedLevel = Levels[0];
-        _selectedSide = Sides[0];
-        _selectedDifficulty = Difficulties[0];
-        _selectedLamp = Lamps[0];
-        _selectedPeriod = Periods[0];
+        /* Filters and the tab are restored from the last run. The fields are set directly so that no refresh is
+           scheduled before the store exists; the first import triggers the initial query. */
+        _searchText = settings.SearchText ?? "";
+        _selectedLevel = Restore(Levels, settings.FilterLevel);
+        _selectedSide = Restore(Sides, settings.FilterSide);
+        _selectedDifficulty = Restore(Difficulties, settings.FilterDifficulty);
+        _selectedLamp = Restore(Lamps, settings.FilterLamp);
+        _selectedPeriod = Restore(Periods, settings.FilterPeriodDays);
+        _selectedTab = settings.SelectedTab == 1 ? 1 : 0;
 
         OpenFolderCommand = new RelayCommand(_ => _ = ChooseFolderAsync());
         ReimportCommand = StoreCommand(_ => _ = ImportAsync());
@@ -171,6 +175,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ScheduleRefresh(debounce: false);
         }
     }
+
+    /// <summary>The option whose value was saved last time, or the first one ("すべて") when nothing or an unknown value was saved.</summary>
+    static FilterOption<T> Restore<T>(IReadOnlyList<FilterOption<T>> options, T saved) =>
+        saved is null ? options[0] : options.FirstOrDefault(o => EqualityComparer<T>.Default.Equals(o.Value, saved)) ?? options[0];
 
     ChartFilter BuildFilter() => new()
     {
@@ -815,6 +823,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         _settings.LastChartKey = SelectedChart?.Key;
         _settings.NewestFirst = NewestFirst;
+        _settings.SearchText = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText;
+        _settings.FilterLevel = SelectedLevel.Value;
+        _settings.FilterSide = SelectedSide.Value;
+        _settings.FilterDifficulty = SelectedDifficulty.Value;
+        _settings.FilterLamp = SelectedLamp.Value;
+        _settings.FilterPeriodDays = SelectedPeriod.Value;
+        _settings.SelectedTab = SelectedTab;
     }
 
     void CloseStore()
